@@ -11,6 +11,13 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - image: opencode-server
+            context: .
+          - image: opencode-telegram-bot
+            context: ./telegram-bot
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -21,11 +28,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ${{ matrix.context }}
           push: true
           no-cache: ${{ github.event_name == 'schedule' }}
           tags: |
-            ghcr.io/borborborja/opencode-server:latest
-            ghcr.io/borborborja/opencode-server:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ghcr.io/borborborja/${{ matrix.image }}:latest
+            ghcr.io/borborborja/${{ matrix.image }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}

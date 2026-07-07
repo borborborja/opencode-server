@@ -4,11 +4,30 @@ echo "--- opencode-server entrypoint ---"
 echo "user $(id -u):$(id -g)  home=$HOME"
 
 DEFAULTS=/usr/local/share/opencode-defaults
+OCDIR="$HOME/.config/opencode"
 
-# --- Sembrar config si el volumen HOME viene vacío (no pisa lo que ya exista) ---
-mkdir -p "$HOME/.config/opencode" "$HOME/.config/mise" 2>/dev/null || true
-[ -f "$HOME/.config/opencode/opencode.json" ] || cp "$DEFAULTS/opencode.json" "$HOME/.config/opencode/opencode.json" 2>/dev/null || true
-[ -f "$HOME/.config/mise/config.toml" ]       || cp "$DEFAULTS/mise.toml"     "$HOME/.config/mise/config.toml" 2>/dev/null || true
+# --- Config de opencode: la imagen manda. Se regenera en cada arranque desde la
+#     plantilla (envsubst solo sustituye las vars nombradas → respeta "$schema"). ---
+mkdir -p "$OCDIR" "$HOME/.config/mise" 2>/dev/null || true
+if [ -f "$DEFAULTS/opencode.json.tpl" ]; then
+  envsubst '${N8N_MCP_AUTH_TOKEN}' < "$DEFAULTS/opencode.json.tpl" > "$OCDIR/opencode.json"
+  # Plugins opt-in (lista separada por comas en OPENCODE_PLUGINS) → se inyectan con jq
+  if [ -n "${OPENCODE_PLUGINS:-}" ]; then
+    arr=$(printf '%s' "$OPENCODE_PLUGINS" | jq -R 'split(",") | map(gsub("^\\s+|\\s+$";""))')
+    tmp=$(mktemp); jq --argjson p "$arr" '.plugin = $p' "$OCDIR/opencode.json" > "$tmp" && mv "$tmp" "$OCDIR/opencode.json"
+    echo "plugins habilitados: $OPENCODE_PLUGINS"
+  fi
+  echo "opencode.json regenerado desde plantilla"
+fi
+
+# --- Skills (agentes/comandos/reglas): sincronizados desde la imagen en cada arranque.
+#     Los del proyecto (.opencode/) siguen teniendo prioridad. ---
+[ -d "$DEFAULTS/agent" ]   && { mkdir -p "$OCDIR/agent";   cp -f "$DEFAULTS/agent/"*.md   "$OCDIR/agent/"   2>/dev/null || true; }
+[ -d "$DEFAULTS/command" ] && { mkdir -p "$OCDIR/command"; cp -f "$DEFAULTS/command/"*.md "$OCDIR/command/" 2>/dev/null || true; }
+[ -f "$DEFAULTS/AGENTS.md" ] && cp -f "$DEFAULTS/AGENTS.md" "$OCDIR/AGENTS.md" 2>/dev/null || true
+
+# --- mise: config global sembrada si falta (no se pisa) ---
+[ -f "$HOME/.config/mise/config.toml" ] || cp "$DEFAULTS/mise.toml" "$HOME/.config/mise/config.toml" 2>/dev/null || true
 
 # --- Toolchain: instala los runtimes de mise en segundo plano (no bloquea el arranque) ---
 # Primera vez que el volumen está vacío tarda unos minutos; luego es instantáneo (persistido).

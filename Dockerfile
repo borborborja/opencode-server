@@ -11,10 +11,15 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # --- Toolchain base (build tools + CLIs de dev) ---
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      git curl wget ca-certificates gnupg \
+      git curl wget ca-certificates gnupg gettext-base \
       build-essential make cmake pkg-config \
       ripgrep fd-find jq sqlite3 unzip less fzf openssh-client \
     && ln -sf "$(command -v fdfind)" /usr/local/bin/fd \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- Librerías de sistema para el Chromium de Playwright (el binario del navegador
+#     se descarga al volumen HOME en el primer uso; aquí solo las deps del SO) ---
+RUN npx -y playwright@latest install-deps chromium \
     && rm -rf /var/lib/apt/lists/*
 
 # --- GitHub CLI (gh) ---
@@ -43,6 +48,7 @@ ENV HOME=/home/node \
     XDG_CONFIG_HOME=/home/node/.config \
     NPM_CONFIG_PREFIX=/home/node/.npm-global \
     MISE_DATA_DIR=/home/node/.local/share/mise \
+    PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
     PATH=/home/node/.npm-global/bin:/home/node/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin \
     IN_DOCKER=true
 
