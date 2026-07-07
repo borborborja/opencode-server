@@ -1,0 +1,25 @@
+# Ejemplo genérico. Copia .env.example a .env y ajusta claves.
+services:
+  opencode:
+    image: ghcr.io/borborborja/opencode-server:latest
+    container_name: opencode
+    user: "1000:1000"
+    env_file: .env
+    environment:
+      - AUTO_UPDATE=true
+      - HOME=/home/node
+      - TZ=Europe/Madrid
+    ports:
+      - "4096:4096"
+    volumes:
+      - ./data/home:/home/node          # estado + config + auth + sesiones
+      - ./projects:/home/node/projects  # tu código
+    restart: unless-stopped
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    healthcheck:
+      test: ["CMD", "curl", "-sS", "-o", "/dev/null", "http://localhost:4096"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
