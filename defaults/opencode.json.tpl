@@ -15,6 +15,28 @@
       "cargo *": "allow"
     }
   },
+  "provider": {
+    "ollama-cloud": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama Cloud",
+      "options": {
+        "baseURL": "https://ollama.com/v1",
+        "apiKey": "{env:OLLAMA_API_KEY}"
+      },
+      "models": {
+        "qwen3-coder:480b": { "name": "Qwen3 Coder 480B (cloud)" },
+        "qwen3-coder-next": { "name": "Qwen3 Coder Next (cloud)" },
+        "deepseek-v3.1:671b": { "name": "DeepSeek V3.1 671B (cloud)" },
+        "deepseek-v4-pro": { "name": "DeepSeek V4 Pro (cloud)" },
+        "gpt-oss:120b": { "name": "GPT-OSS 120B (cloud)" },
+        "gpt-oss:20b": { "name": "GPT-OSS 20B (cloud)" },
+        "kimi-k2.7-code": { "name": "Kimi K2.7 Code (cloud)" },
+        "glm-5.2": { "name": "GLM-5.2 (cloud)" },
+        "minimax-m3": { "name": "MiniMax M3 (cloud)" },
+        "mistral-large-3:675b": { "name": "Mistral Large 3 675B (cloud)" }
+      }
+    }
+  },
   "mcp": {
     "filesystem": {
       "type": "local",
