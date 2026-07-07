@@ -1,0 +1,8 @@
+# Runtimes globales por defecto (mise). Se instalan en segundo plano al primer
+# arranque y persisten en el volumen. Cada proyecto puede fijar los suyos con
+# su propio .mise.toml / .tool-versions.
+[tools]
+node = "lts"
+python = "latest"
+go = "latest"
+rust = "latest"

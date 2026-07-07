@@ -3,9 +3,22 @@ set -e
 echo "--- opencode-server entrypoint ---"
 echo "user $(id -u):$(id -g)  home=$HOME"
 
-# OPCIÓN 1 — autoactualización: en cada arranque instala la última opencode
-# en el prefijo del HOME (volumen, escribible por uid 1000). Si falla (sin red),
-# se usa la versión horneada en /usr/local.
+DEFAULTS=/usr/local/share/opencode-defaults
+
+# --- Sembrar config si el volumen HOME viene vacío (no pisa lo que ya exista) ---
+mkdir -p "$HOME/.config/opencode" "$HOME/.config/mise" 2>/dev/null || true
+[ -f "$HOME/.config/opencode/opencode.json" ] || cp "$DEFAULTS/opencode.json" "$HOME/.config/opencode/opencode.json" 2>/dev/null || true
+[ -f "$HOME/.config/mise/config.toml" ]       || cp "$DEFAULTS/mise.toml"     "$HOME/.config/mise/config.toml" 2>/dev/null || true
+
+# --- Toolchain: instala los runtimes de mise en segundo plano (no bloquea el arranque) ---
+# Primera vez que el volumen está vacío tarda unos minutos; luego es instantáneo (persistido).
+if command -v mise >/dev/null 2>&1; then
+  echo "mise: $(mise --version) → instalando runtimes en segundo plano (log en \$HOME/.cache/mise-install.log)"
+  mkdir -p "$HOME/.cache" 2>/dev/null || true
+  ( mise install -y >"$HOME/.cache/mise-install.log" 2>&1 && echo "mise install: OK" >>"$HOME/.cache/mise-install.log" ) &
+fi
+
+# --- OPCIÓN 1 — autoactualización de opencode en cada arranque ---
 if [ "${AUTO_UPDATE:-true}" = "true" ]; then
   echo "AUTO_UPDATE=on → npm i -g opencode-ai@latest (prefix $NPM_CONFIG_PREFIX)"
   mkdir -p "$NPM_CONFIG_PREFIX" 2>/dev/null || true
